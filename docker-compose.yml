@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic_rag_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      # Avoid mounting host node_modules or virtual environment over the container space
+      - /app/venv
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/agentic_rag
+      - SUPABASE_URL=https://your-supabase-project.supabase.co
+      - SUPABASE_KEY=your-supabase-anon-key
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+      - LOG_LEVEL=INFO
+    depends_on:
+      - db
+    networks:
+      - platform-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agentic_rag_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - platform-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: agentic_rag_postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=agentic_rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - platform-network
+
+volumes:
+  postgres_data:
+
+networks:
+  platform-network:
+    driver: bridge
