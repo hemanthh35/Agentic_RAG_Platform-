@@ -10,12 +10,14 @@ supabase_client: Optional[Client] = None
 # Initialize the Supabase client only if credentials are provided and valid
 if (
     settings.SUPABASE_URL
-    and settings.SUPABASE_ANON_KEY
+    and (settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY)
     and "your-supabase" not in settings.SUPABASE_URL
 ):
     try:
+        # Prefer service role key for backend admin operations to bypass RLS policies
+        supabase_key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY
         supabase_client = create_client(
-            settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY
+            settings.SUPABASE_URL, supabase_key
         )
         logger.info("Supabase client initialized successfully.")
     except Exception as e:

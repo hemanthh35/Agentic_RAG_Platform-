@@ -18,7 +18,7 @@ class StorageService:
             
     def _ensure_client(self):
         if not self.client:
-            raise AppException(status_code=503, detail="Storage service is currently unavailable.")
+            raise AppException("Storage service is currently unavailable.", status_code=503)
 
     async def upload_file(self, file_path: str, file_bytes: bytes, content_type: str) -> str:
         """Uploads a file to Supabase storage.
@@ -47,7 +47,7 @@ class StorageService:
             return file_path
         except Exception as e:
             logger.error(f"Failed to upload file to storage: {e}")
-            raise AppException(status_code=500, detail="Failed to upload file to storage.")
+            raise AppException("Failed to upload file to storage.", status_code=500)
 
     async def delete_file(self, file_path: str) -> bool:
         """Deletes a file from Supabase storage.
@@ -68,7 +68,7 @@ class StorageService:
             return True
         except Exception as e:
             logger.error(f"Failed to delete file from storage: {e}")
-            raise AppException(status_code=500, detail="Failed to delete file from storage.")
+            raise AppException("Failed to delete file from storage.", status_code=500)
 
     async def create_signed_url(self, file_path: str, expires_in: int = 3600) -> str:
         """Generates a signed URL for a file.
@@ -95,4 +95,4 @@ class StorageService:
             raise ValueError("signedURL key not found in response")
         except Exception as e:
             logger.error(f"Failed to generate signed URL: {e}")
-            raise AppException(status_code=500, detail="Failed to generate download URL.")
+            raise AppException("Failed to generate download URL.", status_code=500)
