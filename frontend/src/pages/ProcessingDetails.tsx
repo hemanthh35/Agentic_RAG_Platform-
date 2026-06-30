@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import PageHeader from "../components/common/PageHeader";
 import Badge from "../components/common/Badge";
-import Button from "../common/Button";
-import Skeleton from "../common/Skeleton";
+import Button from "../components/common/Button";
+import Skeleton from "../components/common/Skeleton";
 import processingService from "@/services/processingService";
 import type { Document } from "@/types/document";
 import type { ProcessingTimelineEvent, ProcessingLog } from "@/types/processing";
@@ -183,14 +183,14 @@ const ProcessingDetails: React.FC = () => {
               <Button
                 variant="primary"
                 onClick={handleRetry}
-                isLoading={retrying}
+                loading={retrying}
               >
                 Retry Processing
               </Button>
             )}
             <Badge variant={
               doc.processing_status === "Completed" ? "success" :
-              doc.processing_status === "Failed" ? "error" : "warning"
+              doc.processing_status === "Failed" ? "danger" : "warning"
             }>
               {doc.processing_status.toUpperCase()}
             </Badge>

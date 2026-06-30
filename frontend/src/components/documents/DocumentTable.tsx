@@ -119,7 +119,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, loading, onRef
                 </td>
                 <td className="px-6 py-4">
                   <Badge 
-                    variant={doc.processing_status === 'Completed' ? 'success' : doc.processing_status === 'Failed' ? 'error' : 'warning'}
+                    variant={doc.processing_status === 'Completed' ? 'success' : doc.processing_status === 'Failed' ? 'danger' : 'warning'}
                   >
                     {doc.processing_status}
                   </Badge>
@@ -132,7 +132,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, loading, onRef
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      isLoading={isDownloading === doc.id}
+                      loading={isDownloading === doc.id}
                       onClick={() => handleDownload(doc.id, doc.original_filename)}
                       className="text-pastel-blue-600 hover:text-pastel-blue-700 hover:bg-pastel-blue-50"
                     >
@@ -168,7 +168,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, loading, onRef
           <Button variant="outline" onClick={() => setDeleteId(null)} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>
+          <Button variant="danger" onClick={handleDelete} loading={isDeleting}>
             Delete
           </Button>
         </div>
