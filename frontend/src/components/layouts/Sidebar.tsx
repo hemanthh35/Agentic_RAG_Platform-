@@ -36,8 +36,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ),
     },
     {
-      name: "Processing",
-      path: "/processing",
+      name: "Knowledge Index",
+      path: "/indexing",
       activeColor: "bg-pastel-amber-50 text-pastel-amber-500 border-pastel-amber-300",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

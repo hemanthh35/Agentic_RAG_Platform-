@@ -68,6 +68,14 @@ class DocumentResponse(BaseModel):
     indexing_duration: Optional[float] = None
     failed_chunk_count: int = 0
     
+    # Additional AI Indexing Metadata Fields
+    indexing_status: Optional[str] = 'Unindexed'
+    indexing_started_at: Optional[datetime] = None
+    indexing_completed_at: Optional[datetime] = None
+    indexed_vector_count: int = 0
+    index_version: int = 1
+    last_indexed_at: Optional[datetime] = None
+    
     created_at: datetime
     updated_at: datetime
 

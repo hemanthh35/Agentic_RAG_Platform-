@@ -6,6 +6,9 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.services.document import DocumentService
+from app.dependencies.services import get_document_service
+from app.document_processing.dependencies import get_document_processing_service
+from app.document_processing.services.processing_service import DocumentProcessingService
 
 client = TestClient(app)
 
@@ -14,7 +17,12 @@ def mock_document_service():
     with patch("app.api.v1.endpoints.documents.get_document_service") as mock_get_service:
         mock_service = AsyncMock(spec=DocumentService)
         # We need to configure the dependency override properly
-        app.dependency_overrides[app.api.v1.endpoints.documents.get_document_service] = lambda: mock_service
+        app.dependency_overrides[get_document_service] = lambda: mock_service
+        
+        # Mock the document processing service dependency as well
+        mock_proc_service = MagicMock(spec=DocumentProcessingService)
+        app.dependency_overrides[get_document_processing_service] = lambda: mock_proc_service
+        
         yield mock_service
         app.dependency_overrides.clear()
 
@@ -24,22 +32,29 @@ def test_upload_document_success(mock_document_service):
     import uuid
     from datetime import datetime
     doc_id = uuid.uuid4()
-    mock_document_service.upload_document.return_value = {
-        "id": doc_id,
-        "original_filename": "test.pdf",
-        "stored_filename": "test-stored.pdf",
-        "bucket_name": "documents",
-        "storage_path": "test-stored.pdf",
-        "mime_type": "application/pdf",
-        "file_size": 1024,
-        "upload_status": "ready",
-        "processing_status": "Uploaded",
-        "extracted_text_version": 1,
-        "extraction_completed": False,
-        "description": "test desc",
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-    }
+    
+    class MockDoc:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+                
+    mock_doc = MockDoc(
+        id=doc_id,
+        original_filename="test.pdf",
+        stored_filename="test-stored.pdf",
+        bucket_name="documents",
+        storage_path="test-stored.pdf",
+        mime_type="application/pdf",
+        file_size=1024,
+        upload_status="ready",
+        processing_status="Uploaded",
+        extracted_text_version=1,
+        extraction_completed=False,
+        description="test desc",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+    mock_document_service.upload_document.return_value = mock_doc
     
     file_content = b"test content"
     files = {"file": ("test.pdf", io.BytesIO(file_content), "application/pdf")}

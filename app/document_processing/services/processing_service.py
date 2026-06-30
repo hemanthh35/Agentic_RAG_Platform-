@@ -39,13 +39,13 @@ class DocumentProcessingService:
         """Trigger background processing job for a document."""
         if not self.queue:
             logger.error("ProcessingQueue is not initialized. Cannot run background processing.")
-            raise AppException(status_code=500, detail="Background worker system is not configured.")
+            raise AppException(message="Background worker system is not configured.", status_code=500)
 
         # Update status to QUEUED
         try:
             doc = self.repository.get(document_id)
             if not doc:
-                raise AppException(status_code=404, detail="Document not found.")
+                raise AppException(message="Document not found.", status_code=404)
 
             self.repository.update(doc, {
                 "processing_status": "Queued"
@@ -55,7 +55,7 @@ class DocumentProcessingService:
             self.queue.enqueue(self.process_document_task, document_id, 0)
         except Exception as e:
             logger.error(f"Failed to enqueue processing job for document {document_id}: {e}")
-            raise AppException(status_code=500, detail="Failed to initialize processing job.")
+            raise AppException(message="Failed to initialize processing job.", status_code=500)
 
     async def process_document_task(self, document_id: UUID, retry_count: int = 0) -> None:
         """Background task running the extraction, cleaning, and storage pipeline."""

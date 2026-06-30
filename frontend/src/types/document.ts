@@ -26,6 +26,17 @@ export interface Document {
 
   created_at: string;
   updated_at: string;
+
+  // Document Semantic Indexing Pipeline Fields
+  chunk_count: number | null;
+  embedding_model: string | null;
+  embedding_dimension: number | null;
+  embedding_status: string | null;
+  index_status: string | null;
+  indexed_at: string | null;
+  vector_collection: string | null;
+  indexing_duration: number | null;
+  failed_chunk_count: number;
 }
 
 export interface PaginatedDocumentResponse {

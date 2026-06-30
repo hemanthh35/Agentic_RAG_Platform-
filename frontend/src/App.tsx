@@ -8,34 +8,40 @@ import Evaluation from "./pages/Evaluation";
 import Memory from "./pages/Memory";
 import NotFound from "./pages/NotFound";
 import Observability from "./pages/Observability";
-import ProcessingDashboard from "./pages/ProcessingDashboard";
-import ProcessingDetails from "./pages/ProcessingDetails";
+import IndexingDashboard from "./pages/IndexingDashboard";
+import DocumentDetails from "./pages/DocumentDetails";
 import Retrieval from "./pages/Retrieval";
 import Settings from "./pages/Settings";
+import { ToastProvider } from "./contexts/ToastContext";
+import ToastContainer from "./components/common/ToastContainer";
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Main application layout containing sidebars and headers */}
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="documents" element={<Documents />} />
-          <Route path="processing" element={<ProcessingDashboard />} />
-          <Route path="processing/:documentId" element={<ProcessingDetails />} />
-          <Route path="retrieval" element={<Retrieval />} />
-          <Route path="agent" element={<Agent />} />
-          <Route path="memory" element={<Memory />} />
-          <Route path="evaluation" element={<Evaluation />} />
-          <Route path="observability" element={<Observability />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Main application layout containing sidebars and headers */}
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="documents" element={<Documents />} />
+            <Route path="processing" element={<Navigate to="/indexing" replace />} />
+            <Route path="indexing" element={<IndexingDashboard />} />
+            <Route path="indexing/:documentId" element={<DocumentDetails />} />
+            <Route path="retrieval" element={<Retrieval />} />
+            <Route path="agent" element={<Agent />} />
+            <Route path="memory" element={<Memory />} />
+            <Route path="evaluation" element={<Evaluation />} />
+            <Route path="observability" element={<Observability />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
 
-        {/* Catch-all 404 handler redirect */}
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Catch-all 404 handler redirect */}
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+        <ToastContainer />
+      </BrowserRouter>
+    </ToastProvider>
   );
 };
 

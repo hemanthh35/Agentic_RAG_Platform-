@@ -58,6 +58,18 @@ class Document(Base):
     vector_collection = Column(String, nullable=True)
     indexing_duration = Column(Float, nullable=True)
     failed_chunk_count = Column(Integer, default=0, nullable=False)
+    
+    # Additional AI Indexing Metadata Fields (Phase 4 Database Expansion)
+    indexing_status = Column(String, default="Unindexed", nullable=True)
+    indexing_started_at = Column(DateTime(timezone=True), nullable=True)
+    indexing_completed_at = Column(DateTime(timezone=True), nullable=True)
+    indexed_vector_count = Column(Integer, default=0, nullable=False)
+    index_version = Column(Integer, default=1, nullable=False)
+    last_indexed_at = Column(DateTime(timezone=True), nullable=True)
+
+    chunks = relationship(
+        "Chunk", back_populates="document", cascade="all, delete-orphan"
+    )
 
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -68,3 +80,7 @@ class Document(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+
+# Import relationship targets to register them with SQLAlchemy registry
+from app.models.chunk import Chunk  # noqa: F401
