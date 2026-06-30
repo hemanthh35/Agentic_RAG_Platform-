@@ -40,7 +40,7 @@ class DocumentRepository(BaseRepository[Document]):
 
         # Apply filters
         if status:
-            query = query.filter(self.model.upload_status == status)
+            query = query.filter(self.model.processing_status == status)
             
         if search:
             search_term = f"%{search}%"

@@ -33,6 +33,9 @@ def test_upload_document_success(mock_document_service):
         "mime_type": "application/pdf",
         "file_size": 1024,
         "upload_status": "ready",
+        "processing_status": "Uploaded",
+        "extracted_text_version": 1,
+        "extraction_completed": False,
         "description": "test desc",
         "created_at": datetime.now(),
         "updated_at": datetime.now(),
@@ -46,7 +49,7 @@ def test_upload_document_success(mock_document_service):
     
     assert response.status_code == 201
     assert response.json()["original_filename"] == "test.pdf"
-    assert response.json()["upload_status"] == "ready"
+    assert response.json()["processing_status"] == "Uploaded"
 
 
 def test_list_documents(mock_document_service):
@@ -77,6 +80,9 @@ def test_get_document(mock_document_service):
         "mime_type": "application/pdf",
         "file_size": 1024,
         "upload_status": "ready",
+        "processing_status": "Completed",
+        "extracted_text_version": 1,
+        "extraction_completed": True,
         "description": "test desc",
         "created_at": datetime.now(),
         "updated_at": datetime.now(),

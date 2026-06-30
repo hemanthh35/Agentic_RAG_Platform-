@@ -23,9 +23,38 @@ CREATE TABLE IF NOT EXISTS documents (
     file_size INTEGER NOT NULL,
     upload_status VARCHAR(50) NOT NULL DEFAULT 'pending',
     description TEXT,
+    processing_status VARCHAR(50) NOT NULL DEFAULT 'Uploaded',
+    processing_started_at TIMESTAMPTZ,
+    processing_completed_at TIMESTAMPTZ,
+    processing_duration FLOAT,
+    processing_error TEXT,
+    parser_used VARCHAR(100),
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    page_count INTEGER,
+    character_count INTEGER,
+    word_count INTEGER,
+    line_count INTEGER,
+    extracted_text_version INTEGER NOT NULL DEFAULT 1,
+    extraction_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Index document upload_status for filtering
-CREATE INDEX IF NOT EXISTS idx_documents_upload_status ON documents(upload_status);
+-- Index document status for filtering
+CREATE INDEX IF NOT EXISTS idx_documents_processing_status ON documents(processing_status);
+
+-- Create Extracted Texts table
+CREATE TABLE IF NOT EXISTS extracted_texts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    document_id UUID UNIQUE NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    text_content TEXT NOT NULL,
+    extraction_timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    parser_used VARCHAR(100) NOT NULL,
+    version_number INTEGER NOT NULL DEFAULT 1,
+    character_count INTEGER NOT NULL,
+    word_count INTEGER NOT NULL,
+    page_count INTEGER NOT NULL,
+    line_count INTEGER NOT NULL,
+    extraction_status VARCHAR(50) NOT NULL,
+    processing_duration FLOAT NOT NULL
+);

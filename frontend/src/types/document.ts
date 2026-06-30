@@ -8,6 +8,22 @@ export interface Document {
   file_size: number;
   upload_status: string;
   description: string | null;
+  
+  // Document Processing Pipeline Fields
+  processing_status: string;
+  processing_started_at: string | null;
+  processing_completed_at: string | null;
+  processing_duration: number | null;
+  processing_error: string | null;
+  parser_used: string | null;
+  retry_count: number;
+  page_count: number | null;
+  character_count: number | null;
+  word_count: number | null;
+  line_count: number | null;
+  extracted_text_version: number;
+  extraction_completed: boolean;
+
   created_at: string;
   updated_at: string;
 }

@@ -8,6 +8,8 @@ import Evaluation from "./pages/Evaluation";
 import Memory from "./pages/Memory";
 import NotFound from "./pages/NotFound";
 import Observability from "./pages/Observability";
+import ProcessingDashboard from "./pages/ProcessingDashboard";
+import ProcessingDetails from "./pages/ProcessingDetails";
 import Retrieval from "./pages/Retrieval";
 import Settings from "./pages/Settings";
 
@@ -19,6 +21,8 @@ const App: React.FC = () => {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="documents" element={<Documents />} />
+          <Route path="processing" element={<ProcessingDashboard />} />
+          <Route path="processing/:documentId" element={<ProcessingDetails />} />
           <Route path="retrieval" element={<Retrieval />} />
           <Route path="agent" element={<Agent />} />
           <Route path="memory" element={<Memory />} />

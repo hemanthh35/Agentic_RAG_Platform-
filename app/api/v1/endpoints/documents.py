@@ -4,6 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 
 from app.dependencies.services import get_document_service
+from app.document_processing.dependencies import get_document_processing_service
+from app.document_processing.services.processing_service import DocumentProcessingService
 from app.schemas.document import DocumentResponse, PaginatedDocumentResponse
 from app.services.document import DocumentService
 
@@ -21,13 +23,18 @@ async def upload_document(
     title: Optional[str] = Form(None, description="Optional title, defaults to filename"),
     description: Optional[str] = Form(None, description="Optional description"),
     document_service: DocumentService = Depends(get_document_service),
+    processing_service: DocumentProcessingService = Depends(get_document_processing_service),
 ):
     """
     Upload a document. The file is saved in Supabase storage and metadata in the database.
-    Supported types: PDF, DOCX, TXT, Markdown.
+    Supported formats: PDF, DOCX, TXT, Markdown.
     Max size: 10MB.
+    
+    Triggers the document processing pipeline asynchronously.
     """
-    return await document_service.upload_document(title, description, file)
+    doc = await document_service.upload_document(title, description, file)
+    processing_service.start_processing(doc.id)
+    return doc
 
 
 @router.get(
@@ -97,3 +104,19 @@ async def delete_document(
     Delete a document completely (removes storage file and database record).
     """
     await document_service.delete_document(id)
+
+
+@router.post(
+    "/{id}/process",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Manually trigger or retry document processing",
+)
+def process_document(
+    id: UUID,
+    processing_service: DocumentProcessingService = Depends(get_document_processing_service),
+):
+    """
+    Manually trigger or retry the text extraction processing pipeline for an existing document.
+    """
+    processing_service.start_processing(id)
+    return {"message": "Document processing initiated", "document_id": id}

@@ -77,6 +77,9 @@ class DocumentService:
                 "mime_type": content_type,
                 "file_size": file_size,
                 "upload_status": "ready",
+                "processing_status": "Uploaded",
+                "extracted_text_version": 1,
+                "extraction_completed": False,
                 "description": description
             })
             return DocumentResponse.model_validate(db_obj)

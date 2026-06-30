@@ -119,9 +119,9 @@ const DocumentTable: React.FC<DocumentTableProps> = ({ documents, loading, onRef
                 </td>
                 <td className="px-6 py-4">
                   <Badge 
-                    variant={doc.upload_status === 'ready' ? 'success' : doc.upload_status === 'error' ? 'error' : 'warning'}
+                    variant={doc.processing_status === 'Completed' ? 'success' : doc.processing_status === 'Failed' ? 'error' : 'warning'}
                   >
-                    {doc.upload_status}
+                    {doc.processing_status}
                   </Badge>
                 </td>
                 <td className="px-6 py-4 text-pastel-slate-500">
