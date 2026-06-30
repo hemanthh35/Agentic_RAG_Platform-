@@ -17,6 +17,14 @@ from app.retrieval.cache.cache_manager import InMemoryCacheManager
 from app.retrieval.repositories.retrieval_repository import RetrievalRepository
 from app.retrieval.repositories.metadata_repository import MetadataRepository
 
+# Import Retrieval Manager components
+from app.retrieval.manager.validator import RetrievalValidator
+from app.retrieval.manager.session_builder import RetrievalSessionBuilder
+from app.retrieval.manager.coordinator import RetrievalCoordinator
+from app.retrieval.manager.execution_manager import RetrievalExecutionManager
+from app.retrieval.manager.result_builder import RetrievalResultBuilder
+from app.retrieval.manager.retrieval_manager import RetrievalManager
+
 # Initialize singleton instances for providers to avoid multiple registration warnings
 _mock_provider = MockRetrievalProvider()
 _qdrant_provider = QdrantRetrievalProvider()
@@ -40,6 +48,12 @@ _metrics_service = MetricsService()
 _retrieval_repo = RetrievalRepository()
 _metadata_repo = MetadataRepository()
 
+# Manager helpers singletons
+_manager_validator = RetrievalValidator(_validation_service)
+_session_builder = RetrievalSessionBuilder()
+_execution_manager = RetrievalExecutionManager()
+_result_builder = RetrievalResultBuilder()
+
 
 def get_retrieval_service() -> RetrievalService:
     """Dependency Injection provider tree constructing and resolving the RetrievalService hierarchy."""
@@ -57,17 +71,22 @@ def get_retrieval_service() -> RetrievalService:
     
     strategies = [semantic_strategy, keyword_strategy, hybrid_strategy]
     
-    # Instantiate orchestrator
+    # Instantiate orchestrator and coordinator
     orchestrator = RetrievalOrchestrator(strategies)
+    coordinator = RetrievalCoordinator(orchestrator)
     
-    # Return high-level coordinate service
-    return RetrievalService(
-        orchestrator=orchestrator,
-        validation_service=_validation_service,
-        context_service=_context_service,
+    # Instantiate Retrieval Manager
+    manager = RetrievalManager(
+        validator=_manager_validator,
+        session_builder=_session_builder,
+        coordinator=coordinator,
+        execution_manager=_execution_manager,
+        result_builder=_result_builder,
         query_processor=_query_processor,
-        metrics_service=_metrics_service,
         cache_manager=_cache_manager,
         retrieval_repository=_retrieval_repo,
         metadata_repository=_metadata_repo
     )
+    
+    # Return high-level coordinate service
+    return RetrievalService(manager)
