@@ -15,12 +15,17 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 -- Create Documents table
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    stored_filename VARCHAR(255) NOT NULL,
+    bucket_name VARCHAR(100) NOT NULL,
+    storage_path VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size INTEGER NOT NULL,
+    upload_status VARCHAR(50) NOT NULL DEFAULT 'pending',
     description TEXT,
-    status VARCHAR(50) NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Index document status for filtering
-CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+-- Index document upload_status for filtering
+CREATE INDEX IF NOT EXISTS idx_documents_upload_status ON documents(upload_status);

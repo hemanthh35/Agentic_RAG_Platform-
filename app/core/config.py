@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: str
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
+    # Document Configuration
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB
+    SUPPORTED_DOCUMENT_TYPES: List[str] = [".pdf", ".docx", ".txt", ".md"]
+
     # Logging Configuration
     LOG_LEVEL: str = "INFO"
 
