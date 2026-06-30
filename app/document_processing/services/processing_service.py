@@ -12,6 +12,7 @@ from app.document_processing.services.queue import ProcessingQueue
 from app.document_processing.services.parsers import ParserFactory
 from app.document_processing.services.cleaners import TextCleaner
 from app.models.extracted_text import ExtractedText
+from app.indexing.services.indexing_service import IndexingService
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +163,11 @@ class DocumentProcessingService:
                 "processing_error": None
             })
             
-            logger.info(f"Document {document_id} successfully processed and marked Completed in {duration:.2f}s.")
+            logger.info(f"Document {document_id} successfully processed and marked Completed in {duration:.2f}s. Triggering semantic indexing.")
+            
+            # 7. Index chunks and embeddings to Qdrant collection
+            indexing_service = IndexingService(self.repository)
+            await indexing_service.index_document_task(document_id)
 
         except asyncio.TimeoutError:
             # Cancel task safely

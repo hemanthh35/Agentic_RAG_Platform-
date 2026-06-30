@@ -10,7 +10,7 @@ VALUES (
 ) ON CONFLICT (email) DO NOTHING;
 
 -- Insert mock test documents
-INSERT INTO documents (id, original_filename, stored_filename, bucket_name, storage_path, mime_type, file_size, upload_status, description, processing_status, processing_started_at, processing_completed_at, processing_duration, processing_error, parser_used, retry_count, page_count, character_count, word_count, line_count, extracted_text_version, extraction_completed, created_at, updated_at)
+INSERT INTO documents (id, original_filename, stored_filename, bucket_name, storage_path, mime_type, file_size, upload_status, description, processing_status, processing_started_at, processing_completed_at, processing_duration, processing_error, parser_used, retry_count, page_count, character_count, word_count, line_count, extracted_text_version, extraction_completed, chunk_count, embedding_model, embedding_dimension, embedding_status, index_status, indexed_at, vector_collection, indexing_duration, failed_chunk_count, created_at, updated_at)
 VALUES 
 (
     'b2c9c0d1-e2f3-4a5b-6c7d-8e9f0a1b2c3e',
@@ -35,6 +35,15 @@ VALUES
     120,
     1,
     TRUE,
+    15,
+    'BAAI/bge-m3',
+    1024,
+    'Completed',
+    'Indexed',
+    NOW() - INTERVAL '1 day',
+    'documents',
+    0.45,
+    0,
     NOW() - INTERVAL '1 day',
     NOW() - INTERVAL '1 day'
 ),
@@ -61,6 +70,15 @@ VALUES
     NULL,
     1,
     FALSE,
+    NULL,
+    NULL,
+    NULL,
+    'Pending',
+    'Unindexed',
+    NULL,
+    NULL,
+    NULL,
+    0,
     NOW(),
     NOW()
 ) ON CONFLICT (id) DO NOTHING;

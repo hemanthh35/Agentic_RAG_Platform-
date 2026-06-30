@@ -57,6 +57,17 @@ class DocumentResponse(BaseModel):
     extracted_text_version: int = 1
     extraction_completed: bool = False
     
+    # Document Semantic Indexing Pipeline Fields
+    chunk_count: Optional[int] = None
+    embedding_model: Optional[str] = None
+    embedding_dimension: Optional[int] = None
+    embedding_status: Optional[str] = 'Pending'
+    index_status: Optional[str] = 'Unindexed'
+    indexed_at: Optional[datetime] = None
+    vector_collection: Optional[str] = None
+    indexing_duration: Optional[float] = None
+    failed_chunk_count: int = 0
+    
     created_at: datetime
     updated_at: datetime
 

@@ -48,6 +48,17 @@ class Document(Base):
         "ExtractedText", uselist=False, back_populates="document", cascade="all, delete-orphan"
     )
 
+    # Document Semantic Indexing Pipeline Fields
+    chunk_count = Column(Integer, nullable=True)
+    embedding_model = Column(String, nullable=True)
+    embedding_dimension = Column(Integer, nullable=True)
+    embedding_status = Column(String, default="Pending", nullable=True)
+    index_status = Column(String, default="Unindexed", nullable=True)
+    indexed_at = Column(DateTime(timezone=True), nullable=True)
+    vector_collection = Column(String, nullable=True)
+    indexing_duration = Column(Float, nullable=True)
+    failed_chunk_count = Column(Integer, default=0, nullable=False)
+
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

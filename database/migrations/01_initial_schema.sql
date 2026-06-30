@@ -36,6 +36,15 @@ CREATE TABLE IF NOT EXISTS documents (
     line_count INTEGER,
     extracted_text_version INTEGER NOT NULL DEFAULT 1,
     extraction_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    chunk_count INTEGER,
+    embedding_model VARCHAR(100),
+    embedding_dimension INTEGER,
+    embedding_status VARCHAR(50) DEFAULT 'Pending',
+    index_status VARCHAR(50) DEFAULT 'Unindexed',
+    indexed_at TIMESTAMPTZ,
+    vector_collection VARCHAR(100),
+    indexing_duration FLOAT,
+    failed_chunk_count INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
