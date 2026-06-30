@@ -60,3 +60,34 @@ def test_retrieval_search_long_query():
     response = client.post("/api/v1/retrieval/search", json=payload)
     assert response.status_code == 400
     assert "exceeds maximum allowed length" in response.json()["error"]["message"]
+
+
+def test_retrieval_search_invalid_limit():
+    """Verify limit must be between 1 and 100."""
+    payload = {
+        "query": "valid query",
+        "limit": 0,
+        "strategy": "semantic"
+    }
+    # This will fail Pydantic model validation first, raising a 422
+    response = client.post("/api/v1/retrieval/search", json=payload)
+    assert response.status_code == 422
+    
+    payload["limit"] = 101
+    response = client.post("/api/v1/retrieval/search", json=payload)
+    assert response.status_code == 422
+
+
+def test_retrieval_search_invalid_threshold():
+    """Verify relevance similarity threshold score must be between 0.0 and 1.0."""
+    payload = {
+        "query": "valid query",
+        "threshold": -0.1,
+        "strategy": "semantic"
+    }
+    response = client.post("/api/v1/retrieval/search", json=payload)
+    assert response.status_code == 422
+    
+    payload["threshold"] = 1.1
+    response = client.post("/api/v1/retrieval/search", json=payload)
+    assert response.status_code == 422

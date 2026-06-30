@@ -11,6 +11,8 @@ from app.retrieval.orchestrator.retrieval_orchestrator import RetrievalOrchestra
 from app.retrieval.services.retrieval_service import RetrievalService
 from app.retrieval.services.validation_service import ValidationService
 from app.retrieval.services.context_service import ContextService
+from app.retrieval.services.query_processor import QueryProcessor
+from app.retrieval.services.metrics_service import MetricsService
 from app.retrieval.cache.cache_manager import InMemoryCacheManager
 from app.retrieval.repositories.retrieval_repository import RetrievalRepository
 from app.retrieval.repositories.metadata_repository import MetadataRepository
@@ -28,9 +30,11 @@ provider_registry.register_provider(_postgres_provider)
 # Cache manager singleton
 _cache_manager = InMemoryCacheManager()
 
-# Validation & Context services singletons
+# Validation, Normalization & Metrics services singletons
 _validation_service = ValidationService()
 _context_service = ContextService()
+_query_processor = QueryProcessor()
+_metrics_service = MetricsService()
 
 # Repositories singletons
 _retrieval_repo = RetrievalRepository()
@@ -61,6 +65,9 @@ def get_retrieval_service() -> RetrievalService:
         orchestrator=orchestrator,
         validation_service=_validation_service,
         context_service=_context_service,
+        query_processor=_query_processor,
+        metrics_service=_metrics_service,
         cache_manager=_cache_manager,
-        retrieval_repository=_retrieval_repo
+        retrieval_repository=_retrieval_repo,
+        metadata_repository=_metadata_repo
     )
