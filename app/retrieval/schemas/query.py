@@ -16,6 +16,9 @@ class RetrievalRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional request metadata parameters")
     options: Optional[Dict[str, Any]] = Field(None, description="Configuration parameters for reranking or execution")
     strategy: str = Field("semantic", description="Retrieval strategy: semantic, keyword, or hybrid")
+    trace_id: Optional[str] = Field(None, description="Distributed tracing Trace ID")
+    span_id: Optional[str] = Field(None, description="Distributed tracing Span ID")
+    correlation_id: Optional[str] = Field(None, description="Correlation identifier tracking requests across systems")
 
 
 class RetrievalResultItem(BaseModel):

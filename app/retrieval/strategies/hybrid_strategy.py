@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional, Dict, Any
 
 from app.retrieval.interfaces.strategy_interface import BaseRetrievalStrategy
-from app.retrieval.interfaces.provider_interface import BaseRetrievalProvider
+from app.retrieval.orchestrator.pipeline import RetrievalPipeline
 from app.retrieval.schemas.query import RetrievalResultItem
 
 logger = logging.getLogger(__name__)
@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 class HybridRetrievalStrategy(BaseRetrievalStrategy):
     """Retrieval strategy combining semantic vector and keyword results, sorting by score."""
 
-    def __init__(self, providers: List[BaseRetrievalProvider]):
-        self.providers = providers
+    def __init__(self, pipeline: RetrievalPipeline):
+        self.pipeline = pipeline
 
     @property
     def name(self) -> str:
@@ -26,11 +26,7 @@ class HybridRetrievalStrategy(BaseRetrievalStrategy):
         filters: Optional[Dict[str, Any]] = None
     ) -> List[RetrievalResultItem]:
         logger.info(f"Executing hybrid retrieval strategy for query '{query}' (threshold={threshold})")
-        all_results = []
-        for provider in self.providers:
-            if provider.name in ("qdrant", "postgres", "mock"):
-                res = await provider.retrieve(query, limit, filters)
-                all_results.extend(res)
+        all_results = await self.pipeline.execute_parallel(query, limit, filters)
 
         # Deduplicate chunks and filter by threshold score
         seen_ids = set()

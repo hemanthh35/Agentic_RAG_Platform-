@@ -9,6 +9,7 @@ from app.retrieval.manager.session_builder import RetrievalSessionBuilder
 from app.retrieval.manager.coordinator import RetrievalCoordinator
 from app.retrieval.manager.execution_manager import RetrievalExecutionManager
 from app.retrieval.manager.result_builder import RetrievalResultBuilder
+from app.retrieval.manager.observability import TelemetryManager
 from app.retrieval.services.query_processor import QueryProcessor
 from app.retrieval.cache.cache_manager import BaseCacheManager
 from app.retrieval.repositories.retrieval_repository import RetrievalRepository
@@ -28,6 +29,7 @@ class RetrievalManager:
         coordinator: RetrievalCoordinator,
         execution_manager: RetrievalExecutionManager,
         result_builder: RetrievalResultBuilder,
+        telemetry_manager: TelemetryManager,
         query_processor: QueryProcessor,
         cache_manager: BaseCacheManager,
         retrieval_repository: RetrievalRepository,
@@ -38,6 +40,7 @@ class RetrievalManager:
         self.coordinator = coordinator
         self.execution_manager = execution_manager
         self.result_builder = result_builder
+        self.telemetry_manager = telemetry_manager
         self.query_processor = query_processor
         self.cache_manager = cache_manager
         self.retrieval_repository = retrieval_repository
@@ -48,20 +51,34 @@ class RetrievalManager:
         timeline = RetrievalTimelineMetrics()
         start_time = time.time()
         
-        # 1. Validate request parameters
+        # 1. Initialize distributed tracing telemetry context
+        trace_context = self.telemetry_manager.initialize_tracing(
+            trace_id=request.trace_id,
+            span_id=request.span_id,
+            correlation_id=request.correlation_id
+        )
+        trace_id = trace_context["trace_id"]
+        correlation_id = trace_context["correlation_id"]
+        
+        logger.info(
+            f"[Retrieval Started] Query: '{request.query}' | TraceID: {trace_id} | "
+            f"CorrelationID: {correlation_id}"
+        )
+        
+        # 2. Validate request parameters
         timeline.start_stage("validation")
         self.validator.validate(request)
         timeline.end_stage("validation")
         
-        # 2. Build Session parameters
+        # 3. Build Session parameters
         session_details = self.session_builder.build_session(request)
         session_id = session_details["session_id"]
-        self.execution_manager.update_state(session_id, "initialized")
+        self.execution_manager.update_state(session_id, f"initialized | TraceID: {trace_id}")
         
-        # 3. Preprocess / Normalize Query
+        # 4. Preprocess / Normalize Query
         timeline.start_stage("normalization")
         normalized_query = self.query_processor.preprocess(request.query)
-        self.execution_manager.update_state(session_id, f"query_normalized: {normalized_query}")
+        self.execution_manager.update_state(session_id, f"query_normalized | TraceID: {trace_id}")
         timeline.end_stage("normalization")
         
         # Verify access authorization constraints
@@ -78,7 +95,7 @@ class RetrievalManager:
                     pass
             self.metadata_repository.verify_document_access(uuid_list)
             
-        # 4. Check cache lookup
+        # 5. Check cache lookup
         timeline.start_stage("cache_lookup")
         limit = request.limit if request.limit else retrieval_settings.DEFAULT_RETRIEVAL_LIMIT
         threshold = request.threshold if request.threshold is not None else retrieval_settings.DEFAULT_SIMILARITY_THRESHOLD
@@ -88,12 +105,15 @@ class RetrievalManager:
         timeline.end_stage("cache_lookup")
         
         if cached_results is not None:
-            self.execution_manager.update_state(session_id, "cache_hit")
+            self.execution_manager.update_state(session_id, f"cache_hit | TraceID: {trace_id}")
             execution_time_ms = (time.time() - start_time) * 1000
             
             confidence = 0.0
             if cached_results:
                 confidence = sum(r.score for r in cached_results) / len(cached_results)
+                
+            response_metadata = request.metadata or {}
+            response_metadata = {**response_metadata, **trace_context}
                 
             return self.result_builder.build_response(
                 query=normalized_query,
@@ -102,14 +122,16 @@ class RetrievalManager:
                 confidence=confidence,
                 strategy=request.strategy,
                 providers=["cache"],
-                metadata=request.metadata,
+                metadata=response_metadata,
                 timeline=timeline.get_timeline()
             )
 
-        # 5. Cache Miss, execute strategy retrieval
-        self.execution_manager.update_state(session_id, "searching")
+        # 6. Cache Miss, execute strategy retrieval
+        self.execution_manager.update_state(session_id, f"searching | TraceID: {trace_id}")
         timeline.start_stage("search_execution")
         
+        # Log span events
+        self.telemetry_manager.instrument_provider_start("orchestrator", trace_context)
         items = await self.coordinator.retrieve(
             query=normalized_query,
             limit=limit,
@@ -117,10 +139,15 @@ class RetrievalManager:
             strategy=request.strategy,
             filters=request.filters
         )
+        self.telemetry_manager.instrument_provider_end(
+            provider_name="orchestrator", 
+            tracing=trace_context, 
+            duration_ms=(time.time() - start_time) * 1000
+        )
         timeline.end_stage("search_execution")
-        self.execution_manager.update_state(session_id, "results_collected")
+        self.execution_manager.update_state(session_id, f"results_collected | TraceID: {trace_id}")
 
-        # 6. Save cache index
+        # 7. Save cache index
         timeline.start_stage("caching")
         self.cache_manager.set(
             key=cache_key,
@@ -129,7 +156,7 @@ class RetrievalManager:
         )
         timeline.end_stage("caching")
 
-        # 7. Log retrieval analytics
+        # 8. Log retrieval analytics
         self.retrieval_repository.log_search(
             query=normalized_query,
             strategy=request.strategy,
@@ -155,9 +182,12 @@ class RetrievalManager:
         if items:
             confidence = sum(r.score for r in items) / len(items)
 
-        # 8. Build response DTO contract
-        self.execution_manager.update_state(session_id, "completed")
+        # 9. Build response DTO contract
+        self.execution_manager.update_state(session_id, f"completed | TraceID: {trace_id}")
         execution_time_ms = (time.time() - start_time) * 1000
+        
+        response_metadata = request.metadata or {}
+        response_metadata = {**response_metadata, **trace_context}
         
         return self.result_builder.build_response(
             query=normalized_query,
@@ -166,6 +196,6 @@ class RetrievalManager:
             confidence=confidence,
             strategy=request.strategy,
             providers=providers,
-            metadata=request.metadata,
+            metadata=response_metadata,
             timeline=timeline.get_timeline()
         )

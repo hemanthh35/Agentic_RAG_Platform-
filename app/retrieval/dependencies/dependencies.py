@@ -7,6 +7,7 @@ from app.retrieval.strategies.semantic_strategy import SemanticRetrievalStrategy
 from app.retrieval.strategies.keyword_strategy import KeywordRetrievalStrategy
 from app.retrieval.strategies.hybrid_strategy import HybridRetrievalStrategy
 
+from app.retrieval.orchestrator.pipeline import RetrievalPipeline
 from app.retrieval.orchestrator.retrieval_orchestrator import RetrievalOrchestrator
 from app.retrieval.services.retrieval_service import RetrievalService
 from app.retrieval.services.validation_service import ValidationService
@@ -23,6 +24,8 @@ from app.retrieval.manager.session_builder import RetrievalSessionBuilder
 from app.retrieval.manager.coordinator import RetrievalCoordinator
 from app.retrieval.manager.execution_manager import RetrievalExecutionManager
 from app.retrieval.manager.result_builder import RetrievalResultBuilder
+from app.retrieval.manager.circuit_breaker import ProviderCircuitBreaker
+from app.retrieval.manager.observability import TelemetryManager
 from app.retrieval.manager.retrieval_manager import RetrievalManager
 
 # Initialize singleton instances for providers to avoid multiple registration warnings
@@ -53,21 +56,26 @@ _manager_validator = RetrievalValidator(_validation_service)
 _session_builder = RetrievalSessionBuilder()
 _execution_manager = RetrievalExecutionManager()
 _result_builder = RetrievalResultBuilder()
+_circuit_breaker = ProviderCircuitBreaker(failure_threshold=3, recovery_timeout_seconds=10.0)
+_telemetry_manager = TelemetryManager()
 
 
 def get_retrieval_service() -> RetrievalService:
     """Dependency Injection provider tree constructing and resolving the RetrievalService hierarchy."""
     # Resolve providers list from registry
-    providers = [
-        provider_registry.get_provider("qdrant"),
-        provider_registry.get_provider("postgres"),
-        provider_registry.get_provider("mock")
-    ]
+    mock_p = provider_registry.get_provider("mock")
+    qdrant_p = provider_registry.get_provider("qdrant")
+    postgres_p = provider_registry.get_provider("postgres")
+    
+    # Instantiate concurrent pipelines for target strategy scopes
+    semantic_pipeline = RetrievalPipeline([qdrant_p, mock_p], _circuit_breaker)
+    keyword_pipeline = RetrievalPipeline([postgres_p, mock_p], _circuit_breaker)
+    hybrid_pipeline = RetrievalPipeline([qdrant_p, postgres_p, mock_p], _circuit_breaker)
     
     # Instantiate search strategies
-    semantic_strategy = SemanticRetrievalStrategy(providers)
-    keyword_strategy = KeywordRetrievalStrategy(providers)
-    hybrid_strategy = HybridRetrievalStrategy(providers)
+    semantic_strategy = SemanticRetrievalStrategy(semantic_pipeline)
+    keyword_strategy = KeywordRetrievalStrategy(keyword_pipeline)
+    hybrid_strategy = HybridRetrievalStrategy(hybrid_pipeline)
     
     strategies = [semantic_strategy, keyword_strategy, hybrid_strategy]
     
@@ -82,6 +90,7 @@ def get_retrieval_service() -> RetrievalService:
         coordinator=coordinator,
         execution_manager=_execution_manager,
         result_builder=_result_builder,
+        telemetry_manager=_telemetry_manager,
         query_processor=_query_processor,
         cache_manager=_cache_manager,
         retrieval_repository=_retrieval_repo,
