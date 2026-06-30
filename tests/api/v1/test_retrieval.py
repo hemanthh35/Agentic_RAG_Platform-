@@ -48,3 +48,15 @@ def test_retrieval_search_empty_query():
     response = client.post("/api/v1/retrieval/search", json=payload)
     assert response.status_code == 400
     assert "Query string cannot be empty" in response.json()["error"]["message"]
+
+
+def test_retrieval_search_long_query():
+    """Verify that posting query exceeding 500 characters returns HTTP 400 Bad Request."""
+    payload = {
+        "query": "a" * 501,
+        "limit": 5,
+        "strategy": "semantic"
+    }
+    response = client.post("/api/v1/retrieval/search", json=payload)
+    assert response.status_code == 400
+    assert "exceeds maximum allowed length" in response.json()["error"]["message"]
