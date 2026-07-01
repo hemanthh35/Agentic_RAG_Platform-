@@ -6,6 +6,7 @@ from app.retrieval.interfaces.provider_interface import BaseRetrievalProvider
 from app.retrieval.schemas.query import RetrievalResultItem
 from app.retrieval.config.settings import retrieval_settings
 from app.retrieval.manager.circuit_breaker import ProviderCircuitBreaker
+from app.retrieval.context.retrieval_context import RetrievalContext
 
 logger = logging.getLogger(__name__)
 
@@ -23,25 +24,26 @@ class RetrievalPipeline:
 
     async def execute_parallel(
         self,
-        query: str,
-        limit: int,
-        filters: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None
+        context: RetrievalContext
     ) -> List[RetrievalResultItem]:
         if not self.providers:
             return []
 
-        timeout_sec = timeout if timeout is not None else retrieval_settings.PROVIDER_TIMEOUT_SECONDS
+        correlation_id = context.tracing.correlation_id
+        timeout_sec = context.configuration.timeout_sec
         
         async def safe_retrieve(provider: BaseRetrievalProvider) -> List[RetrievalResultItem]:
             # Circuit breaker check before executing search
             if self.circuit_breaker and not self.circuit_breaker.is_allowed(provider.name):
-                logger.warning(f"Bypassing search provider '{provider.name}' - Circuit Breaker is OPEN.")
+                logger.warning(
+                    f"[CorrelationID: {correlation_id}] Bypassing search provider '{provider.name}' - "
+                    f"Circuit Breaker is OPEN."
+                )
                 return []
 
             try:
                 results = await asyncio.wait_for(
-                    provider.retrieve(query, limit, filters),
+                    provider.retrieve(context),
                     timeout=timeout_sec
                 )
                 
@@ -51,12 +53,16 @@ class RetrievalPipeline:
                     
                 return results
             except asyncio.TimeoutError:
-                logger.error(f"Search provider '{provider.name}' timed out after {timeout_sec}s.")
+                logger.error(
+                    f"[CorrelationID: {correlation_id}] Search provider '{provider.name}' timed out after {timeout_sec}s."
+                )
                 if self.circuit_breaker:
                     self.circuit_breaker.record_failure(provider.name)
                 return []
             except Exception as err:
-                logger.error(f"Search provider '{provider.name}' encountered unexpected failure: {err}")
+                logger.error(
+                    f"[CorrelationID: {correlation_id}] Search provider '{provider.name}' encountered unexpected failure: {err}"
+                )
                 if self.circuit_breaker:
                     self.circuit_breaker.record_failure(provider.name)
                 return []
@@ -70,3 +76,4 @@ class RetrievalPipeline:
             combined.extend(res)
             
         return combined
+

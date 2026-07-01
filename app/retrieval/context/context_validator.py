@@ -11,7 +11,7 @@ class RetrievalContextValidator:
             raise ContextValidationError("RequestContext request_id is mandatory.")
             
         if not context.query.original_query or not context.query.original_query.strip():
-            raise ContextValidationError("Original search query keywords cannot be empty.")
+            raise ContextValidationError("Query string cannot be empty or whitespace.")
             
         if context.configuration.timeout_sec <= 0.0:
             raise ContextValidationError(

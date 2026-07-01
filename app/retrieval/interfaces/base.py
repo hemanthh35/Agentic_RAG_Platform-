@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
 from app.retrieval.schemas.query import RetrievalResultItem
+from app.retrieval.context.retrieval_context import RetrievalContext
 
 
 class BaseRetrievalProvider(ABC):
@@ -15,9 +16,7 @@ class BaseRetrievalProvider(ABC):
     @abstractmethod
     async def retrieve(
         self,
-        query: str,
-        limit: int,
-        filters: Optional[Dict[str, Any]] = None
+        context: RetrievalContext
     ) -> List[RetrievalResultItem]:
         """Query the target indexing data source to pull matched items."""
         pass
@@ -35,10 +34,7 @@ class BaseRetrievalStrategy(ABC):
     @abstractmethod
     async def execute(
         self,
-        query: str,
-        limit: int,
-        threshold: float,
-        filters: Optional[Dict[str, Any]] = None
+        context: RetrievalContext
     ) -> List[RetrievalResultItem]:
         """Execute the retrieval pipeline strategy."""
         pass
@@ -51,3 +47,4 @@ class QueryPreprocessor(ABC):
     def preprocess(self, query: str) -> str:
         """Normalize or expand input query keywords."""
         pass
+

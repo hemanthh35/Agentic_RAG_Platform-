@@ -98,4 +98,6 @@ def get_retrieval_service() -> RetrievalService:
     )
     
     # Return high-level coordinate service
-    return RetrievalService(manager)
+    from app.retrieval.context.context_factory import RetrievalContextFactory
+    factory = RetrievalContextFactory(_query_processor)
+    return RetrievalService(manager, factory)

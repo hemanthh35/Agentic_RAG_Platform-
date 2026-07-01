@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 from app.retrieval.schemas.query import RetrievalResponse, RetrievalResultItem
+from app.retrieval.context.retrieval_context import RetrievalContext
 
 
 class RetrievalResultBuilder:
@@ -14,7 +15,8 @@ class RetrievalResultBuilder:
         strategy: str,
         providers: List[str],
         metadata: Optional[Dict[str, Any]] = None,
-        timeline: Optional[Dict[str, float]] = None
+        timeline: Optional[Dict[str, float]] = None,
+        context: Optional[RetrievalContext] = None
     ) -> RetrievalResponse:
         """Compose context records, confidence scores, and latency metrics into response DTO."""
         provider_stats = {
@@ -23,6 +25,17 @@ class RetrievalResultBuilder:
         }
         
         response_meta = metadata or {}
+        if context:
+            # Enrich response metadata with tracing context information
+            response_meta = {
+                **response_meta,
+                "correlation_id": context.tracing.correlation_id,
+                "trace_id": context.tracing.trace_id,
+                "span_id": context.tracing.span_id,
+            }
+            if context.tracing.parent_span_id:
+                response_meta["parent_span_id"] = context.tracing.parent_span_id
+
         if timeline:
             response_meta = {**response_meta, "execution_timeline_ms": timeline}
 
@@ -41,3 +54,4 @@ class RetrievalResultBuilder:
             total_results=len(results),
             providers_queried=providers
         )
+

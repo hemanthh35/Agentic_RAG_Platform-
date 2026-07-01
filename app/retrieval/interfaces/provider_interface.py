@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
 from app.retrieval.schemas.query import RetrievalResultItem
+from app.retrieval.context.retrieval_context import RetrievalContext
 
 
 class BaseRetrievalProvider(ABC):
@@ -15,9 +16,8 @@ class BaseRetrievalProvider(ABC):
     @abstractmethod
     async def retrieve(
         self,
-        query: str,
-        limit: int,
-        filters: Optional[Dict[str, Any]] = None
+        context: RetrievalContext
     ) -> List[RetrievalResultItem]:
         """Fetch chunks matching search criteria from external data storage systems."""
         pass
+

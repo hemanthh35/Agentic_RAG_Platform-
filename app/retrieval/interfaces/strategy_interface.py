@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
 from app.retrieval.schemas.query import RetrievalResultItem
+from app.retrieval.context.retrieval_context import RetrievalContext
 
 
 class BaseRetrievalStrategy(ABC):
@@ -15,10 +16,8 @@ class BaseRetrievalStrategy(ABC):
     @abstractmethod
     async def execute(
         self,
-        query: str,
-        limit: int,
-        threshold: float,
-        filters: Optional[Dict[str, Any]] = None
+        context: RetrievalContext
     ) -> List[RetrievalResultItem]:
         """Orchestrate chunk retrieval operations and format priority context lists."""
         pass
+

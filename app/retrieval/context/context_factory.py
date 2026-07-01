@@ -29,28 +29,81 @@ class RetrievalContextFactory:
             providers = ["qdrant", "postgres"]
 
         builder = RetrievalContextBuilder()
-        builder.with_query(request.query, normalized)
+        
+        # Map Query Context
+        char_count = len(request.query)
+        word_count = len(request.query.split())
+        builder.with_query(
+            query=request.query,
+            normalized=normalized,
+            query_type=request.search_type,
+            character_count=char_count,
+            token_count=word_count  # Simple approximation
+        )
+        
+        # Map Configuration Context
         builder.with_config(
             top_k=limit,
             threshold=threshold,
             timeout=retrieval_settings.PROVIDER_TIMEOUT_SECONDS,
-            cache_enabled=True
+            cache_enabled=True,
+            feature_flags={}
         )
-        builder.with_providers(providers)
-        builder.with_strategy(request.strategy)
         
+        # Map Provider Context
+        options = request.options or {}
+        builder.with_providers(
+            selected=providers,
+            options=options,
+            timeout=retrieval_settings.PROVIDER_TIMEOUT_SECONDS
+        )
+        
+        # Map Strategy Context
+        builder.with_strategy(
+            strategy=request.strategy,
+            configuration=options
+        )
+        
+        # Map Request Context
         if request.session_id:
             builder.with_request(request_id=request.session_id)
+            
+        # Map User Context
         if request.user_id:
             builder.with_user(user_id=str(request.user_id))
             
+        # Map Tracing Context
         builder.with_tracing(
             correlation_id=request.correlation_id,
             trace_id=request.trace_id,
             span_id=request.span_id
         )
         
+        # Map Execution Context (which will be built inside builder)
+        if request.session_id:
+            builder.with_execution(
+                session_id=request.session_id,
+                timeout=retrieval_settings.PROVIDER_TIMEOUT_SECONDS
+            )
+        
+        # Map Metadata Context
+        document_scope = None
+        if request.filters and "document_id" in request.filters:
+            doc_ids = request.filters["document_id"]
+            if isinstance(doc_ids, list):
+                document_scope = [str(d) for d in doc_ids]
+            else:
+                document_scope = [str(doc_ids)]
+
+        builder.with_metadata_context(
+            collection_name=request.collection,
+            document_scope=document_scope,
+            document_filters=request.filters,
+            metadata_filters=request.filters
+        )
+        
         if request.metadata:
             builder.with_metadata(request.metadata)
             
         return builder.build()
+

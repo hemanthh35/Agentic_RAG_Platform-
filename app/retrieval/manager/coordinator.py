@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
 from app.retrieval.orchestrator.retrieval_orchestrator import RetrievalOrchestrator
 from app.retrieval.schemas.query import RetrievalResultItem
+from app.retrieval.context.retrieval_context import RetrievalContext
 
 
 class RetrievalCoordinator:
@@ -11,17 +12,8 @@ class RetrievalCoordinator:
 
     async def retrieve(
         self,
-        query: str,
-        limit: int,
-        threshold: float,
-        strategy: str,
-        filters: Optional[Dict[str, Any]] = None
+        context: RetrievalContext
     ) -> List[RetrievalResultItem]:
         """Trigger strategy execution pipelines under the target orchestrator."""
-        return await self._orchestrator.execute_retrieval(
-            query=query,
-            limit=limit,
-            threshold=threshold,
-            strategy_name=strategy,
-            filters=filters
-        )
+        return await self._orchestrator.execute_retrieval(context)
+

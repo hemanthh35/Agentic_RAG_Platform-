@@ -4,6 +4,7 @@ from app.retrieval.schemas.query import RetrievalRequest, RetrievalResponse
 from app.retrieval.services.retrieval_service import RetrievalService
 from app.retrieval.dependencies.dependencies import get_retrieval_service
 from app.retrieval.exceptions.exceptions import ValidationException
+from app.retrieval.context.context_exceptions import ContextValidationError
 
 router = APIRouter()
 
@@ -25,7 +26,7 @@ async def retrieve_knowledge_context(
     """
     try:
         return await service.retrieve_context(request)
-    except ValidationException as val_err:
+    except (ValidationException, ContextValidationError) as val_err:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(val_err.message)
@@ -35,3 +36,4 @@ async def retrieve_knowledge_context(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Retrieval engine failed to execute query search: {str(err)}"
         )
+

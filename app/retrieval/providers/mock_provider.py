@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 
 from app.retrieval.interfaces.provider_interface import BaseRetrievalProvider
 from app.retrieval.schemas.query import RetrievalResultItem
+from app.retrieval.context.retrieval_context import RetrievalContext
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,16 @@ class MockRetrievalProvider(BaseRetrievalProvider):
 
     async def retrieve(
         self,
-        query: str,
-        limit: int,
-        filters: Optional[Dict[str, Any]] = None
+        context: RetrievalContext
     ) -> List[RetrievalResultItem]:
+        query = context.query.original_query
+        limit = context.configuration.top_k
+        correlation_id = context.tracing.correlation_id
+        
         doc_id = str(uuid.uuid4())
-        logger.info(f"Mock retrieval provider triggered for query '{query}' (limit={limit})")
+        logger.info(
+            f"[CorrelationID: {correlation_id}] Mock retrieval provider triggered for query '{query}' (limit={limit})"
+        )
         return [
             RetrievalResultItem(
                 chunk_id=str(uuid.uuid4()),
@@ -49,3 +54,4 @@ class MockRetrievalProvider(BaseRetrievalProvider):
                 original_filename="manual_agent.pdf"
             )
         ][:limit]
+
